@@ -26,12 +26,24 @@ async def startup_event():
 
 @app.post("/ingest")
 async def ingest(data: IngestModel, background_tasks: BackgroundTasks):
-    # Guardar raw y procesar en background
+    # Guardar evento crudo
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute("INSERT INTO logs (ts, raw, processed, anomaly) VALUES (?, ?, ?, ?)", (data.ts, data.raw, "", 0))
+    c.execute(
+        "INSERT INTO logs (ts, raw, processed, anomaly) VALUES (?, ?, ?, ?)",
+        (data.ts, data.raw, "", 0)
+    )
     conn.commit()
     row_id = c.lastrowid
     conn.close()
+
+    # Procesar en background (ML / detección)
     background_tasks.add_task(process_event, row_id, data.raw, data.ts)
-    return {"status": "ok", "id": row_id}
+
+    # Respuesta clara para Swagger / API clients
+    return {
+        "status": "ingested",
+        "event_id": row_id,
+        "raw_length": len(data.raw),
+        "timestamp": data.ts
+    }
