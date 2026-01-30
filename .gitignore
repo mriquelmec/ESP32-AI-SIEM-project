@@ -18,3 +18,7 @@ desktop.ini
 scipy.libs/
 pandas.libs/
 numpy.libs/
+
+# Frontend (Vite/React)
+frontend/node_modules/
+frontend/dist/
